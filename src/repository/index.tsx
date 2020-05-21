@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouteMatch, Link } from 'react-router-dom';
 import { FiChevronRight, FiChevronLeft } from 'react-icons/fi';
+import api from '../services/api';
 import { Header, RepoInfo, Issues } from './styles';
 
 import logoImg from '../assets/logosmall.svg';
@@ -9,56 +10,96 @@ interface RepositoryParams {
   repository: string;
 }
 
+interface Repository {
+  full_name: string;
+  description: string;
+  stargazers_count: number;
+  forks_count: number;
+  open_issues_count: number;
+  owner: {
+    login: string;
+    avatar_url: string;
+  }
+}
+
+interface Issue {
+  id: number;
+  title: string;
+  html_url: string;
+  user: {
+    login: string;
+  }
+
+}
+
 export const Repository: React.FC = () => {
+  const [repo, setRepo] = useState<Repository | null>(null);
+  const [issue, setIssue] = useState<Issue[]>([]);
+
   const { params } = useRouteMatch<RepositoryParams>();
+
+  useEffect(() => {
+    api.get(`repos/${params.repository}`).then((response) => {
+      setRepo(response.data);
+    });
+
+    api.get(`repos/${params.repository}/issues`).then((response) => {
+      setIssue(response.data);
+    });
+  }, [params.repository]);
+
 
   return (
   <>
   <Header>
     <img src={logoImg} />
 
-    <Link to="//">
+    <Link to="/">
     <FiChevronLeft size={20}/>
 
       Back
     </Link>
   </Header>
 
-  <RepoInfo>
-    <header>
-      <img src="https://avatars2.githubusercontent.com/u/52054459?s=460&u=d4c512846e9d96d98c2da4eeb1c9906691461b80&v=4" alt="die" />
-      <div>
-        <strong>aaaaa</strong>
-        <p>aaaa</p>
-      </div>
-    </header>
-    <ul>
-      <li>
-        <strong> 1000</strong>
-        <span>stars</span>
-      </li>
-      <li>
-        <strong> 1000</strong>
-        <span>forks</span>
-      </li>
-      <li>
-        <strong> 1000</strong>
-        <span>issues</span>
-      </li>
+    {repo && (
+        <RepoInfo>
+        <header>
+          <img src={repo.owner.avatar_url} alt={repo.owner.login} />
+          <div>
+    <strong>{repo.full_name}</strong>
+    <p>{repo.description}</p>
+          </div>
+        </header>
+        <ul>
+          <li>
+            <strong>{repo.stargazers_count}</strong>
+            <span>Stars</span>
+          </li>
+          <li>
+            <strong>{repo.forks_count}</strong>
+            <span>Forks</span>
+          </li>
+          <li>
+            <strong>{repo.open_issues_count}</strong>
+            <span>issues</span>
+          </li>
 
-    </ul>
-  </RepoInfo>
+        </ul>
+      </RepoInfo>
 
+    )}
   <Issues>
-  <Link to="dddddfdf">
-              <div>
-      <strong>aaaaaaaaaaaaaaaaaa</strong>
-      <p>aaaaa</p>
-              </div>
+      {issue.map((issue) => (
+          <a key={issue.id} href={issue.html_url}>
+          <div>
+  <strong>{issue.title}</strong>
+      <p>{issue.user.login}</p>
+          </div>
 
-              <FiChevronRight size={20}/>
-            </Link>
+          <FiChevronRight size={20}/>
+        </a>
 
+      ))}
 
   </Issues>
   </>
